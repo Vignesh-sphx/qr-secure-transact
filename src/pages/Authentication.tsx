@@ -3,7 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import NavBar from '@/components/NavBar';
 import KeyPair from '@/components/KeyPair';
-import { Shield, Key, Lock, CreditCard, Bank } from 'lucide-react';
+import { Shield, Key, Lock, CreditCard, Building } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTransaction } from '@/context/TransactionContext';
 import { Button } from '@/components/ui/button';
@@ -73,7 +73,7 @@ const Authentication: React.FC = () => {
               <Card className="card-shadow overflow-hidden">
                 <CardHeader className="bg-secondary/20">
                   <CardTitle className="flex items-center text-lg">
-                    <Bank className="h-5 w-5 mr-2 text-primary" />
+                    <Building className="h-5 w-5 mr-2 text-primary" />
                     Link Bank Account
                   </CardTitle>
                   <CardDescription>
@@ -159,3 +159,4 @@ const Authentication: React.FC = () => {
 };
 
 export default Authentication;
+
