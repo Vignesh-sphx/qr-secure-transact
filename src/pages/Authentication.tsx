@@ -3,9 +3,11 @@ import React from 'react';
 import Header from '@/components/Header';
 import NavBar from '@/components/NavBar';
 import KeyPair from '@/components/KeyPair';
-import { Shield, Key, Lock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, Key, Lock, CreditCard, Bank } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTransaction } from '@/context/TransactionContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const Authentication: React.FC = () => {
   const { state } = useTransaction();
@@ -29,9 +31,87 @@ const Authentication: React.FC = () => {
           {/* Key Pair Component */}
           <KeyPair />
           
-          {/* Security Information */}
+          {/* Credits Card */}
+          {wallet && (
+            <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <Card className="card-shadow overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+                  <CardTitle className="flex items-center text-lg">
+                    <CreditCard className="h-5 w-5 mr-2 text-primary" />
+                    Your Credits
+                  </CardTitle>
+                  <CardDescription>
+                    Use credits for transactions in the network
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Available Credits</p>
+                      <p className="text-3xl font-bold">{wallet.balance}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="border-dashed"
+                      disabled
+                    >
+                      Add Credits
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Credits are automatically granted when you create a wallet for demo purposes.
+                    In a real application, you would purchase or earn these credits.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* Bank Account Linking (for future implementation) */}
           {wallet && (
             <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <Card className="card-shadow overflow-hidden">
+                <CardHeader className="bg-secondary/20">
+                  <CardTitle className="flex items-center text-lg">
+                    <Bank className="h-5 w-5 mr-2 text-primary" />
+                    Link Bank Account
+                  </CardTitle>
+                  <CardDescription>
+                    Connect your bank account to add or withdraw funds
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Account Number</p>
+                    <Input
+                      type="text"
+                      placeholder="Enter your account number"
+                      disabled
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Routing Number</p>
+                    <Input
+                      type="text"
+                      placeholder="Enter your routing number"
+                      disabled
+                    />
+                  </div>
+                  <Button className="w-full" disabled>
+                    Connect Bank Account
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    This feature is not available in the demo. In a production app, 
+                    you would be able to link your bank account securely through a payment processor.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* Security Information */}
+          {wallet && (
+            <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <Card className="card-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
