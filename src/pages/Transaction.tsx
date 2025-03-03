@@ -69,10 +69,16 @@ const Transaction: React.FC = () => {
     const result = await sendTransaction(recipient, Number(amount));
     if (result) {
       setTransaction(result);
+      
+      toast({
+        title: "Transaction Created",
+        description: "QR code generated successfully. Share it with the recipient.",
+      });
     }
   };
   
   const handleReceiveTransaction = (tx: TransactionData) => {
+    console.log("Received transaction:", tx);
     setReceivedTransaction(tx);
     
     toast({

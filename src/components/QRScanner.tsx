@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ScanLine, Camera, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TransactionData } from '@/utils/cryptography';
+import { QrReader } from 'react-qr-reader';
+import { toast } from '@/components/ui/use-toast';
 
 interface QRScannerProps {
   onScan: (transaction: TransactionData) => void;
@@ -15,27 +17,51 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // In a real application, this would use the device camera
-  // For this demo, we'll simulate scanning a QR code
+  const handleScan = (result: string | null) => {
+    if (!result) return;
+    
+    try {
+      // Parse the QR code data
+      const transactionData = JSON.parse(result) as TransactionData;
+      
+      // Validate the transaction data
+      if (!transactionData.id || !transactionData.sender || 
+          !transactionData.recipient || !transactionData.amount) {
+        throw new Error("Invalid QR code data");
+      }
+      
+      // Process the transaction
+      setIsScanning(false);
+      onScan(transactionData);
+    } catch (err) {
+      setError("Invalid QR code format. Please try again.");
+      
+      toast({
+        variant: "destructive",
+        title: "Scan Failed",
+        description: "Could not read transaction data from QR code.",
+      });
+      
+      // Reset error after a delay
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+  
+  const handleError = (err: Error) => {
+    console.error("QR Scanner error:", err);
+    setError("Camera access denied or error occurred.");
+    setIsScanning(false);
+    
+    toast({
+      variant: "destructive",
+      title: "Camera Error",
+      description: "Unable to access your camera. Please check permissions.",
+    });
+  };
+  
   const startScanning = () => {
     setIsScanning(true);
     setError(null);
-    
-    // Simulate scanning process with a timeout
-    setTimeout(() => {
-      // For demo purposes, create a sample transaction
-      const demoTransaction: TransactionData = {
-        id: `tx_demo_${Date.now().toString(36)}`,
-        sender: 'User123PublicKey...',
-        recipient: 'YourPublicKey...',
-        amount: Math.floor(Math.random() * 100) + 10,
-        timestamp: Date.now(),
-        signature: 'demo_signature'
-      };
-      
-      setIsScanning(false);
-      onScan(demoTransaction);
-    }, 3000);
   };
   
   const cancelScanning = () => {
@@ -57,8 +83,27 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
       <CardContent className="pt-0 pb-6">
         {isScanning ? (
           <div className="relative w-full aspect-square max-w-xs mx-auto bg-gray-900 rounded-lg overflow-hidden">
-            {/* Simulated camera view */}
-            <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+            {/* QR Scanner */}
+            <QrReader
+              constraints={{ facingMode: 'environment' }}
+              onResult={(result) => {
+                if (result) {
+                  handleScan(result.getText());
+                }
+              }}
+              scanDelay={500}
+              className="w-full h-full"
+              videoStyle={{ objectFit: 'cover' }}
+              videoContainerStyle={{ 
+                width: '100%', 
+                height: '100%', 
+                paddingTop: 0 
+              }}
+              onError={handleError}
+            />
+            
+            {/* Overlay scan frame */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-48 h-48 border-2 border-primary/70 rounded-lg relative">
                 {/* Corner markers */}
                 <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-primary"></div>
