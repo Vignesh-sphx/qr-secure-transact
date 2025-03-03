@@ -201,22 +201,24 @@ const Index = () => {
       <NavBar />
       
       {/* Add grid pattern for background */}
-      <style jsx>{`
-        .bg-grid-pattern {
-          background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-                           linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-          background-size: 20px 20px;
-        }
-        
-        .perspective-container {
-          transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
-          transition: transform 0.3s ease;
-        }
-        
-        .perspective-container:hover {
-          transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                             linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+          }
+          
+          .perspective-container {
+            transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
+            transition: transform 0.3s ease;
+          }
+          
+          .perspective-container:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+          }
+        `
+      }} />
     </>
   );
 };

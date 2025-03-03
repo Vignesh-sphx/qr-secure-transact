@@ -71,14 +71,16 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
               </div>
             </div>
             
-            {/* Scan line animation (would normally be in CSS) */}
-            <style jsx>{`
-              @keyframes scanline {
-                0% { transform: translateY(0); }
-                50% { transform: translateY(191px); }
-                100% { transform: translateY(0); }
-              }
-            `}</style>
+            {/* Add keyframes for scan line animation as a style block */}
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                @keyframes scanline {
+                  0% { transform: translateY(0); }
+                  50% { transform: translateY(191px); }
+                  100% { transform: translateY(0); }
+                }
+              `
+            }} />
             
             {/* Cancel button */}
             <Button
