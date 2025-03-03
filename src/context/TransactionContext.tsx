@@ -8,6 +8,7 @@ import {
   exportPrivateKey
 } from '@/utils/cryptography';
 import { toast } from '@/components/ui/use-toast';
+import { useUser } from '@clerk/clerk-react';
 
 // Define the state type
 interface TransactionState {
@@ -27,7 +28,8 @@ type TransactionAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'UPDATE_BALANCE'; payload: number };
+  | { type: 'UPDATE_BALANCE'; payload: number }
+  | { type: 'CLEAR_WALLET' };
 
 // Initial state
 const initialState: TransactionState = {
@@ -98,6 +100,10 @@ const transactionReducer = (state: TransactionState, action: TransactionAction):
         ...state,
         wallet: state.wallet ? { ...state.wallet, balance: action.payload } : null,
       };
+    case 'CLEAR_WALLET':
+      return {
+        ...initialState
+      };
     default:
       return state;
   }
@@ -106,18 +112,28 @@ const transactionReducer = (state: TransactionState, action: TransactionAction):
 // Create the provider component
 export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(transactionReducer, initialState);
+  const { user, isSignedIn } = useUser();
 
-  // Load the wallet from localStorage on mount
+  // Load the wallet from localStorage on mount or when user changes
   useEffect(() => {
     const loadWallet = async () => {
+      if (!isSignedIn || !user) {
+        dispatch({ type: 'CLEAR_WALLET' });
+        return;
+      }
+      
       try {
-        const walletData = localStorage.getItem('secure_wallet');
+        // Use user ID as part of the storage key to isolate wallets per user
+        const walletKey = `secure_wallet_${user.id}`;
+        const walletData = localStorage.getItem(walletKey);
+        
         if (walletData) {
           const wallet = JSON.parse(walletData) as Wallet;
           dispatch({ type: 'SET_WALLET', payload: wallet });
           
           // Also load transactions
-          const transactionsData = localStorage.getItem('secure_transactions');
+          const txKey = `secure_transactions_${user.id}`;
+          const transactionsData = localStorage.getItem(txKey);
           if (transactionsData) {
             const transactions = JSON.parse(transactionsData) as TransactionData[];
             transactions.forEach(tx => {
@@ -132,17 +148,28 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     loadWallet();
-  }, []);
+  }, [user, isSignedIn]);
 
   // Save transactions to localStorage whenever they change
   useEffect(() => {
-    if (state.transactions.length > 0) {
-      localStorage.setItem('secure_transactions', JSON.stringify(state.transactions));
+    if (isSignedIn && user && state.transactions.length > 0) {
+      const txKey = `secure_transactions_${user.id}`;
+      localStorage.setItem(txKey, JSON.stringify(state.transactions));
     }
-  }, [state.transactions]);
+  }, [state.transactions, user, isSignedIn]);
 
   // Create a new wallet
   const createWallet = async () => {
+    if (!isSignedIn || !user) {
+      dispatch({ type: 'SET_ERROR', payload: 'You must be signed in to create a wallet' });
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to create a wallet.",
+      });
+      return;
+    }
+    
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
@@ -161,9 +188,9 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
         transactions: [],
       };
       
-      // Save to state and localStorage
+      // Save to state and localStorage (with user ID in the key)
       dispatch({ type: 'SET_WALLET', payload: wallet });
-      localStorage.setItem('secure_wallet', JSON.stringify(wallet));
+      localStorage.setItem(`secure_wallet_${user.id}`, JSON.stringify(wallet));
       
       toast({
         title: "Wallet created",
@@ -188,6 +215,11 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   // Send a transaction (this is a simplified demo)
   const sendTransaction = async (recipient: string, amount: number): Promise<TransactionData | null> => {
+    if (!isSignedIn || !user) {
+      dispatch({ type: 'SET_ERROR', payload: 'You must be signed in to send transactions' });
+      return null;
+    }
+    
     if (!state.wallet) {
       dispatch({ type: 'SET_ERROR', payload: 'No wallet found' });
       return null;
@@ -224,7 +256,7 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
       
       // Update local storage wallet data
       const updatedWallet = { ...state.wallet, balance: newBalance };
-      localStorage.setItem('secure_wallet', JSON.stringify(updatedWallet));
+      localStorage.setItem(`secure_wallet_${user.id}`, JSON.stringify(updatedWallet));
       
       // Add to pending transactions
       dispatch({ type: 'ADD_PENDING_TRANSACTION', payload: transactionData });
@@ -256,6 +288,11 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   // Confirm a transaction (simulate blockchain confirmation)
   const confirmTransaction = async (transactionId: string) => {
+    if (!isSignedIn) {
+      dispatch({ type: 'SET_ERROR', payload: 'You must be signed in to confirm transactions' });
+      return;
+    }
+    
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { QrCode, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { useUser, UserButton, SignInButton } from '@clerk/clerk-react';
 
 interface HeaderProps {
   className?: string;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isSignedIn } = useUser();
 
   const toggleMenu = () => {
     setMenuOpen(prev => !prev);
@@ -35,31 +37,44 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
           <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
             Home
           </Link>
-          <Link to="/wallet" className="text-sm font-medium hover:text-primary transition-colors">
-            Wallet
-          </Link>
-          <Link to="/transaction" className="text-sm font-medium hover:text-primary transition-colors">
-            Transact
-          </Link>
-          <Link to="/authentication">
-            <Button variant="outline" size="sm" className="ml-2 animate-fade-in">
-              My Account
-            </Button>
-          </Link>
+          {isSignedIn && (
+            <>
+              <Link to="/wallet" className="text-sm font-medium hover:text-primary transition-colors">
+                Wallet
+              </Link>
+              <Link to="/transaction" className="text-sm font-medium hover:text-primary transition-colors">
+                Transact
+              </Link>
+            </>
+          )}
+          {isSignedIn ? (
+            <div className="ml-4">
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          ) : (
+            <SignInButton mode="modal">
+              <Button variant="outline" size="sm">
+                Sign In
+              </Button>
+            </SignInButton>
+          )}
         </nav>
 
         {/* Mobile menu button */}
-        <button 
-          className="md:hidden flex items-center justify-center"
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
-        >
-          {menuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </button>
+        <div className="md:hidden flex items-center gap-4">
+          {isSignedIn && <UserButton afterSignOutUrl="/" />}
+          <button 
+            className="flex items-center justify-center"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            {menuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile navigation */}
@@ -73,30 +88,44 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
             >
               Home
             </Link>
-            <Link 
-              to="/wallet" 
-              className="text-xl font-medium animate-slide-up" 
-              style={{ animationDelay: '0.1s' }}
-              onClick={toggleMenu}
-            >
-              Wallet
-            </Link>
-            <Link 
-              to="/transaction" 
-              className="text-xl font-medium animate-slide-up" 
-              style={{ animationDelay: '0.2s' }}
-              onClick={toggleMenu}
-            >
-              Transact
-            </Link>
-            <Link 
-              to="/authentication" 
-              className="text-xl font-medium animate-slide-up" 
-              style={{ animationDelay: '0.3s' }}
-              onClick={toggleMenu}
-            >
-              My Account
-            </Link>
+            {isSignedIn ? (
+              <>
+                <Link 
+                  to="/wallet" 
+                  className="text-xl font-medium animate-slide-up" 
+                  style={{ animationDelay: '0.1s' }}
+                  onClick={toggleMenu}
+                >
+                  Wallet
+                </Link>
+                <Link 
+                  to="/transaction" 
+                  className="text-xl font-medium animate-slide-up" 
+                  style={{ animationDelay: '0.2s' }}
+                  onClick={toggleMenu}
+                >
+                  Transact
+                </Link>
+                <Link 
+                  to="/authentication" 
+                  className="text-xl font-medium animate-slide-up" 
+                  style={{ animationDelay: '0.3s' }}
+                  onClick={toggleMenu}
+                >
+                  My Account
+                </Link>
+              </>
+            ) : (
+              <SignInButton mode="modal">
+                <Button
+                  variant="outline"
+                  className="text-lg animate-slide-up"
+                  style={{ animationDelay: '0.1s' }}
+                >
+                  Sign In
+                </Button>
+              </SignInButton>
+            )}
           </nav>
         </div>
       )}
