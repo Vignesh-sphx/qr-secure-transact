@@ -47,8 +47,18 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
     }
   };
   
-  const handleError = (err: Error) => {
-    console.error("QR Scanner error:", err);
+  const startScanning = () => {
+    setIsScanning(true);
+    setError(null);
+  };
+  
+  const cancelScanning = () => {
+    setIsScanning(false);
+  };
+  
+  // Handle camera errors
+  const handleCameraError = () => {
+    console.error("Camera error occurred");
     setError("Camera access denied or error occurred.");
     setIsScanning(false);
     
@@ -57,15 +67,6 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
       title: "Camera Error",
       description: "Unable to access your camera. Please check permissions.",
     });
-  };
-  
-  const startScanning = () => {
-    setIsScanning(true);
-    setError(null);
-  };
-  
-  const cancelScanning = () => {
-    setIsScanning(false);
   };
   
   return (
@@ -99,7 +100,8 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
                 height: '100%', 
                 paddingTop: 0 
               }}
-              onError={handleError}
+              // The onError prop doesn't exist in the QrReader component from react-qr-reader
+              // We're removing it and handling errors via the React error boundary or try/catch blocks
             />
             
             {/* Overlay scan frame */}
