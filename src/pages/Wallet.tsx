@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import NavBar from '@/components/NavBar';
@@ -15,6 +15,15 @@ const Wallet: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const { state, hasWallet } = useTransaction();
   const { wallet, transactions, pendingTransactions } = state;
+  const [isBalanceVisible, setIsBalanceVisible] = useState(false);
+
+  // Animation effect when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsBalanceVisible(true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!hasWallet()) {
     return (
@@ -53,19 +62,27 @@ const Wallet: React.FC = () => {
           </p>
         </div>
         
-        {/* Balance Card */}
-        <Card className="mb-8 overflow-hidden card-shadow">
+        {/* Balance Card with enhanced styling and animations */}
+        <Card className="mb-8 overflow-hidden card-shadow hover-scale transition-all-smooth">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 py-6">
             <CardTitle className="text-center">Balance</CardTitle>
           </CardHeader>
           <CardContent className="p-6 flex flex-col items-center justify-center">
-            <div className="text-4xl font-bold mb-2">{wallet?.balance} Units</div>
+            <div 
+              className={`text-4xl font-bold mb-2 transition-all duration-500 ${
+                isBalanceVisible 
+                  ? 'opacity-100 transform translate-y-0' 
+                  : 'opacity-0 transform -translate-y-4'
+              }`}
+            >
+              {wallet?.balance} Units
+            </div>
             <p className="text-muted-foreground text-sm">Available for transactions</p>
             
             <div className="flex gap-3 mt-6">
               <Button 
                 size="sm" 
-                className="flex items-center"
+                className="flex items-center transition-all hover:scale-105"
                 onClick={() => navigate('/transaction')}
               >
                 <ArrowUpRight className="h-4 w-4 mr-1" />
@@ -74,7 +91,7 @@ const Wallet: React.FC = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex items-center"
+                className="flex items-center transition-all hover:scale-105"
                 onClick={() => navigate('/transaction?tab=receive')}
               >
                 <ArrowDownLeft className="h-4 w-4 mr-1" />

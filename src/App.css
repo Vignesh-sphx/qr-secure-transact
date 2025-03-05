@@ -86,3 +86,13 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Balance animation */
+@keyframes balance-reveal {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.balance-animation {
+  animation: balance-reveal 0.8s ease-out forwards;
+}
