@@ -35,6 +35,7 @@ const Transaction: React.FC = () => {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [transaction, setTransaction] = useState<TransactionData | null>(null);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   
   // Receive state
   const [receivedTransaction, setReceivedTransaction] = useState<TransactionData | null>(null);
@@ -66,15 +67,22 @@ const Transaction: React.FC = () => {
       return;
     }
     
-    const result = await sendTransaction(recipient, Number(amount));
-    if (result) {
-      setTransaction(result);
+    setIsGeneratingQR(true);
+    
+    // Add a slight delay for the animation to show
+    setTimeout(async () => {
+      const result = await sendTransaction(recipient, Number(amount));
+      setIsGeneratingQR(false);
       
-      toast({
-        title: "Transaction Created",
-        description: "QR code generated successfully. Share it with the recipient.",
-      });
-    }
+      if (result) {
+        setTransaction(result);
+        
+        toast({
+          title: "Transaction Created",
+          description: "QR code generated successfully. Share it with the recipient.",
+        });
+      }
+    }, 1000);
   };
   
   const handleReceiveTransaction = (tx: TransactionData) => {
@@ -159,20 +167,20 @@ const Transaction: React.FC = () => {
           
           <TabsContent value="send" className="animate-fade-in">
             {transaction ? (
-              <div className="space-y-8">
+              <div className="space-y-8 animate-fade-in">
                 <QRGenerator transaction={transaction} />
                 
                 <div className="text-center">
                   <p className="mb-4 text-sm text-muted-foreground">
                     Share this QR code with the recipient to complete the transaction
                   </p>
-                  <Button variant="outline" onClick={clearTransaction}>
+                  <Button variant="outline" onClick={clearTransaction} className="hover-scale">
                     Create Another Transaction
                   </Button>
                 </div>
               </div>
             ) : (
-              <Card className="card-shadow">
+              <Card className="card-shadow overflow-hidden">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <ArrowUpRight className="h-5 w-5 mr-2 text-primary" />
@@ -183,7 +191,14 @@ const Transaction: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 relative">
+                  {isGeneratingQR && (
+                    <div className="absolute inset-0 bg-card/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 animate-fade-in">
+                      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+                      <p className="text-sm font-medium">Generating Transaction...</p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-2">
                     <label className="text-sm font-medium" htmlFor="recipient">
                       Recipient Address
@@ -193,6 +208,7 @@ const Transaction: React.FC = () => {
                       placeholder="Enter recipient public key or address"
                       value={recipient}
                       onChange={(e) => setRecipient(e.target.value)}
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                   
@@ -207,17 +223,21 @@ const Transaction: React.FC = () => {
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       min="1"
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                 </CardContent>
                 
                 <CardFooter>
                   <Button 
-                    className="w-full btn-shine" 
+                    className="w-full btn-shine relative overflow-hidden group" 
                     onClick={handleSend}
-                    disabled={isLoading}
+                    disabled={isLoading || isGeneratingQR}
                   >
-                    {isLoading ? 'Processing...' : 'Generate Transaction QR'}
+                    <span className="relative z-10 flex items-center">
+                      {isLoading || isGeneratingQR ? 'Processing...' : 'Generate Transaction QR'}
+                      <span className="h-4 w-4 rounded-full bg-white/20 absolute right-0 group-hover:scale-[15] transition-all duration-500 ease-in-out opacity-0 group-hover:opacity-10"></span>
+                    </span>
                   </Button>
                 </CardFooter>
               </Card>
@@ -226,7 +246,7 @@ const Transaction: React.FC = () => {
           
           <TabsContent value="receive" className="animate-fade-in">
             {receivedTransaction ? (
-              <Card className="card-shadow">
+              <Card className="card-shadow animate-fade-in">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg text-green-600">
                     <Check className="h-5 w-5 mr-2" />
@@ -241,7 +261,7 @@ const Transaction: React.FC = () => {
                   <div className="rounded-lg bg-muted p-4">
                     <div className="flex justify-between mb-2">
                       <span className="text-sm font-medium">Amount:</span>
-                      <span className="text-lg font-semibold text-green-600">
+                      <span className="text-lg font-semibold text-green-600 animate-[pulse_2s_ease-in-out_1]">
                         {receivedTransaction.amount} Units
                       </span>
                     </div>
@@ -264,7 +284,7 @@ const Transaction: React.FC = () => {
                 
                 <CardFooter>
                   <Button 
-                    className="w-full" 
+                    className="w-full hover-scale" 
                     onClick={confirmReceivedTransaction}
                   >
                     Confirm & Save Transaction

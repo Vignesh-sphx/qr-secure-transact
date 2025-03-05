@@ -16,11 +16,15 @@ interface QRScannerProps {
 const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const handleScan = (result: string | null) => {
     if (!result) return;
     
     try {
+      // Set processing state to show animation
+      setIsProcessing(true);
+      
       // Parse the QR code data
       const transactionData = JSON.parse(result) as TransactionData;
       
@@ -30,10 +34,16 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
         throw new Error("Invalid QR code data");
       }
       
-      // Process the transaction
-      setIsScanning(false);
-      onScan(transactionData);
+      // Add a small delay to show the processing animation
+      setTimeout(() => {
+        // Process the transaction
+        setIsScanning(false);
+        setIsProcessing(false);
+        onScan(transactionData);
+      }, 1200);
+      
     } catch (err) {
+      setIsProcessing(false);
       setError("Invalid QR code format. Please try again.");
       
       toast({
@@ -54,6 +64,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
   
   const cancelScanning = () => {
     setIsScanning(false);
+    setIsProcessing(false);
   };
   
   // Handle camera errors
@@ -100,9 +111,15 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
                 height: '100%', 
                 paddingTop: 0 
               }}
-              // The onError prop doesn't exist in the QrReader component from react-qr-reader
-              // We're removing it and handling errors via the React error boundary or try/catch blocks
             />
+            
+            {/* Processing overlay (shows when QR is detected) */}
+            {isProcessing && (
+              <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 animate-fade-in">
+                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-white font-medium">Processing Transaction...</p>
+              </div>
+            )}
             
             {/* Overlay scan frame */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -126,6 +143,12 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
                   50% { transform: translateY(191px); }
                   100% { transform: translateY(0); }
                 }
+                
+                @keyframes pulse-border {
+                  0% { border-color: rgba(59, 130, 246, 0.5); }
+                  50% { border-color: rgba(59, 130, 246, 0.8); }
+                  100% { border-color: rgba(59, 130, 246, 0.5); }
+                }
               `
             }} />
             
@@ -142,12 +165,12 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-4 py-6">
-            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center hover-scale">
               <Camera className="h-8 w-8 text-secondary-foreground" />
             </div>
             
             {error ? (
-              <div className="text-sm text-red-500">{error}</div>
+              <div className="text-sm text-red-500 animate-fade-in">{error}</div>
             ) : (
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 Press the button below to access your device's camera and scan a transaction QR code
@@ -155,10 +178,13 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, className }) => {
             )}
             
             <Button 
-              className="mt-2 btn-shine" 
+              className="mt-2 btn-shine relative overflow-hidden group" 
               onClick={startScanning}
             >
-              Start Scanning
+              <span className="relative z-10 flex items-center">
+                <span className="mr-2">Start Scanning</span>
+                <span className="h-4 w-4 rounded-full bg-white/20 absolute right-0 group-hover:scale-[15] transition-all duration-500 ease-in-out opacity-0 group-hover:opacity-10"></span>
+              </span>
             </Button>
           </div>
         )}
