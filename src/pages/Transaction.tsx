@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -25,23 +24,20 @@ import { toast } from '@/components/ui/use-toast';
 const Transaction: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { state, sendTransaction, hasWallet } = useTransaction();
+  const { state, sendTransaction, receiveTransaction, hasWallet } = useTransaction();
   const { isLoading } = state;
   
   const initialTab = searchParams.get('tab') === 'receive' ? 'receive' : 'send';
   const [activeTab, setActiveTab] = useState(initialTab);
   
-  // Send state
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [transaction, setTransaction] = useState<TransactionData | null>(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   
-  // Receive state
   const [receivedTransaction, setReceivedTransaction] = useState<TransactionData | null>(null);
   
   useEffect(() => {
-    // Update tab based on URL parameters
     const tab = searchParams.get('tab');
     if (tab === 'receive') {
       setActiveTab('receive');
@@ -69,7 +65,6 @@ const Transaction: React.FC = () => {
     
     setIsGeneratingQR(true);
     
-    // Add a slight delay for the animation to show
     setTimeout(async () => {
       const result = await sendTransaction(recipient, Number(amount));
       setIsGeneratingQR(false);
@@ -85,9 +80,11 @@ const Transaction: React.FC = () => {
     }, 1000);
   };
   
-  const handleReceiveTransaction = (tx: TransactionData) => {
+  const handleReceiveTransaction = async (tx: TransactionData) => {
     console.log("Received transaction:", tx);
     setReceivedTransaction(tx);
+    
+    await receiveTransaction(tx);
     
     toast({
       title: "Transaction Received",

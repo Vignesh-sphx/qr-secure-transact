@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { 
   TransactionData, 
@@ -47,6 +46,7 @@ const TransactionContext = createContext<{
   createWallet: () => Promise<void>;
   sendTransaction: (recipient: string, amount: number) => Promise<TransactionData | null>;
   confirmTransaction: (transactionId: string) => Promise<void>;
+  receiveTransaction: (transaction: TransactionData) => Promise<void>;
   hasWallet: () => boolean;
 } | undefined>(undefined);
 
@@ -323,6 +323,53 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   };
 
+  // Receive a transaction
+  const receiveTransaction = async (transaction: TransactionData) => {
+    if (!isSignedIn || !user) {
+      dispatch({ type: 'SET_ERROR', payload: 'You must be signed in to receive transactions' });
+      return;
+    }
+    
+    if (!state.wallet) {
+      dispatch({ type: 'SET_ERROR', payload: 'No wallet found' });
+      return;
+    }
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Update the receiver's wallet balance
+      const newBalance = state.wallet.balance + transaction.amount;
+      dispatch({ type: 'UPDATE_BALANCE', payload: newBalance });
+      
+      // Update local storage wallet data
+      const updatedWallet = { ...state.wallet, balance: newBalance };
+      localStorage.setItem(`secure_wallet_${user.id}`, JSON.stringify(updatedWallet));
+      
+      // Add to transactions
+      dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+      
+      toast({
+        title: "Transaction received",
+        description: `You received ${transaction.amount} units from ${transaction.sender.substring(0, 8)}...`,
+      });
+    } catch (error) {
+      console.error('Transaction receiving failed:', error);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error instanceof Error ? error.message : 'Transaction receiving failed' 
+      });
+      
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to receive transaction. Please try again.",
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
   // Check if user has a wallet
   const hasWallet = (): boolean => {
     return state.wallet !== null;
@@ -336,6 +383,7 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
         createWallet,
         sendTransaction,
         confirmTransaction,
+        receiveTransaction,
         hasWallet,
       }}
     >
