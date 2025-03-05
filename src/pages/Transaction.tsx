@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -15,7 +16,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowUpRight, ArrowDownLeft, QrCode, Check } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, QrCode, Check, Mail } from 'lucide-react';
 import { TransactionData } from '@/utils/cryptography';
 import { useTransaction } from '@/context/TransactionContext';
 import { useNavigate } from 'react-router-dom';
@@ -34,8 +35,10 @@ const Transaction: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [transaction, setTransaction] = useState<TransactionData | null>(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [transactionProcessing, setTransactionProcessing] = useState(false);
   
   const [receivedTransaction, setReceivedTransaction] = useState<TransactionData | null>(null);
+  const [receiveAnimationActive, setReceiveAnimationActive] = useState(false);
   
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -64,7 +67,9 @@ const Transaction: React.FC = () => {
     }
     
     setIsGeneratingQR(true);
+    setTransactionProcessing(true);
     
+    // Add animation timing
     setTimeout(async () => {
       const result = await sendTransaction(recipient, Number(amount));
       setIsGeneratingQR(false);
@@ -77,19 +82,31 @@ const Transaction: React.FC = () => {
           description: "QR code generated successfully. Share it with the recipient.",
         });
       }
+      
+      setTimeout(() => {
+        setTransactionProcessing(false);
+      }, 500);
     }, 1000);
   };
   
   const handleReceiveTransaction = async (tx: TransactionData) => {
     console.log("Received transaction:", tx);
-    setReceivedTransaction(tx);
+    setReceiveAnimationActive(true);
     
-    await receiveTransaction(tx);
-    
-    toast({
-      title: "Transaction Received",
-      description: `Received ${tx.amount} units from ${tx.sender.substring(0, 8)}...`,
-    });
+    // Delay to show animation
+    setTimeout(async () => {
+      setReceivedTransaction(tx);
+      await receiveTransaction(tx);
+      
+      toast({
+        title: "Transaction Received",
+        description: `Received ${tx.amount} units from ${tx.sender.substring(0, 8)}...`,
+      });
+      
+      setTimeout(() => {
+        setReceiveAnimationActive(false);
+      }, 500);
+    }, 1000);
   };
   
   const clearTransaction = () => {
@@ -136,7 +153,7 @@ const Transaction: React.FC = () => {
       <Header />
       <div className="page-container pb-20 md:pb-8">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4 animate-float">
             <QrCode className="h-6 w-6 text-primary" />
           </div>
           <h1 className="text-3xl font-bold mb-2">Transaction</h1>
@@ -164,12 +181,18 @@ const Transaction: React.FC = () => {
           
           <TabsContent value="send" className="animate-fade-in">
             {transaction ? (
-              <div className="space-y-8 animate-fade-in">
-                <QRGenerator transaction={transaction} />
+              <div className="space-y-8 animate-scale-in">
+                <div className="relative">
+                  <QRGenerator transaction={transaction} />
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white p-1 rounded-full animate-pulse">
+                    <Mail size={16} />
+                  </div>
+                </div>
                 
                 <div className="text-center">
                   <p className="mb-4 text-sm text-muted-foreground">
-                    Share this QR code with the recipient to complete the transaction
+                    Share this QR code with the recipient to complete the transaction.
+                    A notification email has been sent.
                   </p>
                   <Button variant="outline" onClick={clearTransaction} className="hover-scale">
                     Create Another Transaction
@@ -177,7 +200,7 @@ const Transaction: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <Card className="card-shadow overflow-hidden">
+              <Card className={`card-shadow overflow-hidden ${transactionProcessing ? 'animate-pulse-soft' : ''}`}>
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <ArrowUpRight className="h-5 w-5 mr-2 text-primary" />
@@ -243,14 +266,18 @@ const Transaction: React.FC = () => {
           
           <TabsContent value="receive" className="animate-fade-in">
             {receivedTransaction ? (
-              <Card className="card-shadow animate-fade-in">
+              <Card className="card-shadow animate-scale-in">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg text-green-600">
                     <Check className="h-5 w-5 mr-2" />
                     Transaction Received
+                    <div className="ml-2 bg-green-500 text-white p-1 rounded-full animate-pulse">
+                      <Mail size={16} />
+                    </div>
                   </CardTitle>
                   <CardDescription>
-                    You've successfully received a transaction
+                    You've successfully received a transaction.
+                    A notification email has been sent.
                   </CardDescription>
                 </CardHeader>
                 
@@ -281,7 +308,7 @@ const Transaction: React.FC = () => {
                 
                 <CardFooter>
                   <Button 
-                    className="w-full hover-scale" 
+                    className="w-full hover-scale animate-shimmer bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700" 
                     onClick={confirmReceivedTransaction}
                   >
                     Confirm & Save Transaction
@@ -289,7 +316,17 @@ const Transaction: React.FC = () => {
                 </CardFooter>
               </Card>
             ) : (
-              <QRScanner onScan={handleReceiveTransaction} />
+              <div className={`relative ${receiveAnimationActive ? 'animate-pulse' : ''}`}>
+                <QRScanner onScan={handleReceiveTransaction} />
+                {receiveAnimationActive && (
+                  <div className="absolute inset-0 bg-primary/10 flex items-center justify-center rounded-lg">
+                    <div className="bg-card p-4 rounded-lg shadow-lg animate-fade-in">
+                      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-sm font-medium text-center">Processing Transaction...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </TabsContent>
         </Tabs>

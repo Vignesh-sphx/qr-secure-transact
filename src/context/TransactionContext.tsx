@@ -158,6 +158,39 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, [state.transactions, user, isSignedIn]);
 
+  // Function to send email notification
+  const sendEmailNotification = async (transactionType: 'sent' | 'received', transaction: TransactionData) => {
+    if (!user?.emailAddresses || user.emailAddresses.length === 0) {
+      console.log('No email address available to send notification');
+      return;
+    }
+    
+    try {
+      const userEmail = user.emailAddresses[0].emailAddress;
+      
+      // This is a serverless function to send email - in a real app, you'd implement this
+      // For demo purposes, we'll just log the email that would be sent
+      console.log(`Email would be sent to ${userEmail}`);
+      console.log(`Subject: Transaction ${transactionType === 'sent' ? 'Sent' : 'Received'}`);
+      console.log(`Body: You have ${transactionType} ${transaction.amount} units. Transaction ID: ${transaction.id}`);
+      
+      // In a real implementation, you would call your backend API or serverless function here
+      // const response = await fetch('https://your-api.com/send-email', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     email: userEmail,
+      //     subject: `Transaction ${transactionType === 'sent' ? 'Sent' : 'Received'}`,
+      //     message: `You have ${transactionType} ${transaction.amount} units. Transaction ID: ${transaction.id}`
+      //   })
+      // });
+      
+      console.log('Email notification would be sent successfully');
+    } catch (error) {
+      console.error('Failed to send email notification:', error);
+    }
+  };
+
   // Create a new wallet
   const createWallet = async () => {
     if (!isSignedIn || !user) {
@@ -261,6 +294,9 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
       // Add to pending transactions
       dispatch({ type: 'ADD_PENDING_TRANSACTION', payload: transactionData });
       
+      // Send email notification for transaction sent
+      await sendEmailNotification('sent', transactionData);
+      
       toast({
         title: "Transaction created",
         description: `Transaction of ${amount} units created successfully`,
@@ -296,11 +332,21 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
+      // Find the pending transaction
+      const pendingTx = state.pendingTransactions.find(tx => tx.id === transactionId);
+      if (!pendingTx) {
+        dispatch({ type: 'SET_ERROR', payload: 'Transaction not found' });
+        return;
+      }
+      
       // In a real app, this would involve communicating with a blockchain
       // For demo, we'll just simulate a delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       dispatch({ type: 'CONFIRM_TRANSACTION', payload: transactionId });
+      
+      // Send email notification for confirmed transaction
+      await sendEmailNotification('sent', pendingTx);
       
       toast({
         title: "Transaction confirmed",
@@ -348,6 +394,9 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
       
       // Add to transactions
       dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+      
+      // Send email notification for received transaction
+      await sendEmailNotification('received', transaction);
       
       toast({
         title: "Transaction received",
